@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>洗碗机能源经济性分析系统</title>
+    <style>
+        body {
+            font-family: '微软雅黑', sans-serif;
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        label {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.95rem;
+        }
+        input {
+            padding: 0.8rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        input:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+        button {
+            background: #4a90e2;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .result-panel {
+            margin-top: 2rem;
+            display: none;
+        }
+        .mode-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+        .card {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+        }
+        .metric {
+            margin: 1.2rem 0;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+        }
+        .metric-title {
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .metric-value {
+            font-size: 1.4rem;
+            color: #2d3748;
+            font-weight: 700;
+        }
+        .carbon-tip {
+            color: #48bb78;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 style="text-align: center; color: #2d3748; margin-bottom: 1.5rem;">商用洗碗机能源经济性分析系统</h2>
+        
+        <div class="input-grid">
+            <div class="input-group">
+                <label>洗碗机热功率 (kW)</label>
+                <input type="number" id="power" step="0.1" value="15" required>
+            </div>
+            <div class="input-group">
+                <label>每日工作时长 (小时)</label>
+                <input type="number" id="hours" step="0.5" value="8" required>
+            </div>
+            <div class="input-group">
+                <label>每月工作天数</label>
+                <input type="number" id="days" value="25" required>
+            </div>
+            <div class="input-group">
+                <label>商业气价 (元/m³)</label>
+                <input type="number" id="gasPrice" step="0.1" value="3.8" required>
+            </div>
+            <div class="input-group">
+                <label>商业电价 (元/kWh)</label>
+                <input type="number" id="elecPrice" step="0.1" value="1.2" required>
+            </div>
+            <div class="input-group">
+                <label>设备总投资 (元)</label>
+                <input type="number" id="investment" value="18000" required>
+            </div>
+            <div class="input-group">
+                <label>每月租赁费 (元)</label>
+                <input type="number" id="lease" value="1500" required>
+            </div>
+        </div>
+
+        <button onclick="calculate()">开始分析</button>
+
+        <div class="result-panel" id="results">
+            <h3 style="color: #2d3748; margin-bottom: 1.5rem;">经济性分析结果</h3>
+            <div class="mode-cards">
+                <div class="card">
+                    <h4>一次性投资模式</h4>
+                    <div class="metric">
+                        <div class="metric-title">月节约费用</div>
+                        <div class="metric-value" id="saveOnce">-</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-title">成本节约率</div>
+                        <div class="metric-value" id="ratioOnce">-</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-title">投资回本期</div>
+                        <div class="metric-value" id="paybackOnce">-</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h4>分期租赁模式</h4>
+                    <div class="metric">
+                        <div class="metric-title">月净节省</div>
+                        <div class="metric-value" id="saveLease">-</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-title">净节约率</div>
+                        <div class="metric-value" id="ratioLease">-</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-title">租赁回本期</div>
+                        <div class="metric-value" id="paybackLease">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 2rem;">
+                <h4>环境效益分析</h4>
+                <div class="metric">
+                    <div class="metric-title">年减碳量 (吨CO₂)</div>
+                    <div class="metric-value" id="carbonReduction">-</div>
+                </div>
+                <div class="carbon-tip">* 基于中国电网排放因子0.581kg/kWh，天然气排放因子1.89kg/m³计算</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 碳排放系数（单位：kg）
+        const ELECTRIC_EF = 0.581;   // 电力排放因子 kgCO2/kWh
+        const GAS_EF = 1.89;        // 天然气排放因子 kgCO2/m³
+
+        function calculate() {
+            // 获取输入参数
+            const P = parseFloat(document.getElementById('power').value) || 0;
+            const H = parseFloat(document.getElementById('hours').value) || 0;
+            const D = parseFloat(document.getElementById('days').value) || 0;
+            const Cg = parseFloat(document.getElementById('gasPrice').value) || 0;
+            const Ce = parseFloat(document.getElementById('elecPrice').value) || 0;
+            const X = parseFloat(document.getElementById('investment').value) || 0;
+            const L = parseFloat(document.getElementById('lease').value) || 0;
+
+            // 核心计算逻辑
+            const monthlyElecCost = P * H * D * Ce;
+            const gasConsumption = (P * H * D * 3.6) / 36; // 关键修改：36MJ/m³热值
+            const monthlyGasCost = gasConsumption * Cg;
+
+            // 碳排放计算
+            const annualElecCO2 = (P * H * D * 12) * ELECTRIC_EF / 1000; // 吨
+            const annualGasCO2 = (gasConsumption * 12) * GAS_EF / 1000;  // 吨
+            const carbonReduction = annualElecCO2 - annualGasCO2;
+
+            // 一次性投资模式
+            const monthlySavingOnce = monthlyElecCost - monthlyGasCost;
+            const savingRatioOnce = (monthlySavingOnce / monthlyElecCost * 100) || 0;
+            const paybackOnce = monthlySavingOnce > 0 ? (X / monthlySavingOnce) : Infinity;
+
+            // 租赁模式
+            const monthlySavingLease = monthlySavingOnce - L;
+            const savingRatioLease = (monthlySavingLease / monthlyElecCost * 100) || 0;
+            const paybackLease = monthlySavingLease > 0 ? (X / monthlySavingLease) : Infinity;
+
+            // 显示结果
+            document.getElementById('results').style.display = 'block';
+            
+            // 格式化显示
+            const formatter = new Intl.NumberFormat('zh-CN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            // 更新一次性投资模式结果
+            document.getElementById('saveOnce').textContent = `¥${formatter.format(monthlySavingOnce)}`;
+            document.getElementById('ratioOnce').textContent = `${formatter.format(savingRatioOnce)}%`;
+            document.getElementById('paybackOnce').textContent = 
+                paybackOnce === Infinity ? "不可行" : `${formatter.format(paybackOnce)} 个月`;
+
+            // 更新租赁模式结果
+            document.getElementById('saveLease').textContent = `¥${formatter.format(monthlySavingLease)}`;
+            document.getElementById('ratioLease').textContent = `${formatter.format(savingRatioLease)}%`;
+            document.getElementById('paybackLease').textContent = 
+                paybackLease === Infinity ? "不可行" : `${formatter.format(paybackLease)} 个月`;
+
+            // 更新减碳量
+            document.getElementById('carbonReduction').textContent = 
+                carbonReduction >= 0 ? formatter.format(carbonReduction) : "无减排效益";
+        }
+    </script>
+</body>
+</html>
